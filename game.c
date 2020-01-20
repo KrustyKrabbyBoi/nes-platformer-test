@@ -41,14 +41,14 @@ byte curx = 32;
 byte cury = 16;
 
 byte plrx = 16;
-byte plry = 16;
+unsigned int plry = 1600;
 sbyte plrxv;
-sbyte plryv;
+int plryv;
 
 
 unsigned char tilemap[32][30];
 
-
+unsigned char pad;
 
 void init_tilemap() {
   byte i;
@@ -71,12 +71,12 @@ unsigned char get_tile_px(byte x, byte y) {
 }
 
 const byte CURSPD = 2;
-const byte PLRSPD = 2;
-const byte GRAV = 25;
+const byte PLRSPD = 1;
+const byte GRAV = 10;
 
 bool edit = true;
 
-void control_cursor(unsigned char pad) {
+void control_cursor() {
   if (pad & PAD_LEFT)
     curx -= CURSPD;
   if (pad & PAD_RIGHT)
@@ -93,7 +93,7 @@ void control_cursor(unsigned char pad) {
     edit = false;
 }
 
-void control_player(unsigned char pad) {
+void control_player() {
   if (pad & PAD_LEFT)
     plrxv = -PLRSPD;
   else if (pad & PAD_RIGHT)
@@ -104,20 +104,31 @@ void control_player(unsigned char pad) {
 void update_player() {
   //collsiion
   plrx += plrxv;
-  if (plrxv < 0 && (get_tile_px(plrx, plry) != 0) || (get_tile_px(plrx, plry + 7) != 0))//left
+  if (plrxv < 0 && (get_tile_px(plrx, plry/100) != 0) || (get_tile_px(plrx, plry/100 + 7) != 0))//left
     plrx = (plrx & ~7) + 8;
-  if (plrxv > 0 && (get_tile_px(plrx + 7, plry) != 0) || (get_tile_px(plrx + 7, plry + 7) != 0))//right
+  if (plrxv > 0 && (get_tile_px(plrx + 7, plry/100) != 0) || (get_tile_px(plrx + 7, plry/100 + 7) != 0))//right
     plrx = plrx & ~7;
   
-  plry += plryv/100;
-  if (plryv < 0 && (get_tile_px(plrx, plry) != 0) || (get_tile_px(plrx + 7, plry) != 0)) {//top
-    plry = (plry & ~7) + 8;
+  plry += plryv;
+  if (plryv < 0 && (get_tile_px(plrx, plry/100) != 0) || (get_tile_px(plrx + 7, plry/100) != 0)) {//top
+    plry = ((plry/100 & ~7) + 8) * 100;
     plryv = 0;
   }
-  if ((get_tile_px(plrx, plry + 7) != 0) || (get_tile_px(plrx + 7, plry + 7) != 0)) {//bottom
-    plry = plry & ~7;
+  if ((get_tile_px(plrx, plry/100 + 7) != 0) || (get_tile_px(plrx + 7, plry/100 + 7) != 0)) {//bottom
+    plry = (plry/100 & ~7) * 100;
+    plryv = (pad & PAD_A) ? -200:0;
+    
+  } else if (plryv < 400) {
+    plryv += GRAV;
+  }
+  
+  if (plry/100 > 32 * 8) {
+    edit = true;
+    plrx = 16;
+    plry = 1600;
     plryv = 0;
-  } else plryv += GRAV;
+    plrxv = 0;
+  }
 }
 
 // setup PPU and tables
@@ -139,18 +150,20 @@ void main(void)
   // enable rendering
   ppu_on_all();
   // infinite loop
+  
   while(1) {
+    pad = pad_poll(0);
     if (edit) {
       
-      control_cursor(pad_poll(0));
+      control_cursor();
       oam_spr(curx, cury, 1, 2, 0);
       
     } else {
-      control_player(pad_poll(0));
+      control_player();
       update_player();
     }
     
-    oam_spr(plrx, plry, 0xc3, 4, 4);
+    oam_spr(plrx, plry/100, 0xc3, 4, 4);
     // wait for next frame
     ppu_wait_frame();
   }
