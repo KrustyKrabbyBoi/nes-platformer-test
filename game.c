@@ -99,6 +99,7 @@ void control_player() {
   else if (pad & PAD_RIGHT)
     plrxv = PLRSPD;
   else plrxv = 0;
+  if (pad & PAD_SELECT) edit = true;
 }
 
 void update_player() {
