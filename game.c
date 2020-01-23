@@ -117,13 +117,13 @@ void update_player() {
   }
   if ((get_tile_px(plrx, plry/100 + 7) != 0) || (get_tile_px(plrx + 7, plry/100 + 7) != 0)) {//bottom
     plry = (plry/100 & ~7) * 100;
-    plryv = (pad & PAD_A) ? -200:0;
+    plryv = (pad & PAD_A) ? -250:0;
     
   } else if (plryv < 400) {
     plryv += GRAV;
   }
   
-  if (plry/100 > 32 * 8) {
+  if (plry/100 > 32 * 7) {
     edit = true;
     plrx = 16;
     plry = 1600;
@@ -164,7 +164,7 @@ void main(void)
       update_player();
     }
     
-    oam_spr(plrx, plry/100, 0xc3, 4, 4);
+    oam_spr(plrx, (plry/100) - 1, 0xc3, 4, 4);
     // wait for next frame
     ppu_wait_frame();
   }
